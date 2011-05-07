@@ -1,3 +1,4 @@
 Fdinfo is under the MIT licence.
 
 Fdinfo is a library written in O'Caml to get informations on files opened by other processus.
+It's really easy to use. Please checkout test.ml for an example.
