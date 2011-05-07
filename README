@@ -1,0 +1,3 @@
+Fdinfo is under the MIT licence.
+
+Fdinfo is a library written in O'Caml to get informations on files opened by other processus.
