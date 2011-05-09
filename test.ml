@@ -1,7 +1,7 @@
 (* A simple test to show some functions *)
 
 
-open Fdinfo
+open Fdinfo ;;
 
 let _ =
   
@@ -19,7 +19,7 @@ let _ =
     (* The test can also be performed on the filename *)
     let fd = List.find (fun fd -> fd.num = 27) l in    
     
-    Printf.printf "File %s. Offset: %d\n" fd.name (Int64.to_int (get_offset p fd));
+    Printf.printf "File %s. Offset: %Ld\n" fd.name (get_offset p fd);
     Pervasives.flush Pervasives.stdout
       
   with Not_found ->
