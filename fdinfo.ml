@@ -44,7 +44,7 @@ let get_fds pid =
 	fd_l := { num = (int_of_string fd_num) ; name = fd_name } :: (!fd_l)
       done;
       
-    with End_of_file -> close_in ic
+    with End_of_file -> ignore (close_process_in ic)
   end;
   
   !fd_l
@@ -69,7 +69,7 @@ let get_content pid fd t =
 
   let ic = Unix.open_process_in cmd in
   let line = input_line ic in
-  close_in ic ;
+  ignore (close_process_in ic) ;
 
   let delim = List.nth (Str.full_split r line) 1 in
 
