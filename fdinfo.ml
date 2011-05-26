@@ -22,19 +22,28 @@ let get_infos pid fdnum =
 
   let r = Str.regexp "[0-9]+" in
   let file = Printf.sprintf "/proc/%d/fdinfo/%s" pid fdnum in
-  Unix.access file [R_OK ; F_OK] ;
-  let ic = Unix.open_process_in ("more "^file) in
+
 
   let get_value delim =
     match delim with
       | Str.Delim value -> value
       | _ -> assert false
   in
+  let strip_option var =
+    match var with
+      | None -> raise Fdinfo_parse_error
+      | Some value -> value
+  in
+
+  let ic = ref None in
 
   begin
     try
+      let inchan = open_in file in
+      ic := Some inchan ;
+      
       while true do
-	let line = input_line ic in
+	let line = input_line inchan in
 	
 	match Str.full_split r line with
 	  | text::[delim] ->
@@ -44,16 +53,17 @@ let get_infos pid fdnum =
 	      | _ -> raise Fdinfo_parse_error
 	    end
 	  | _ -> raise Fdinfo_parse_error
-	    
-      done ;
-    with End_of_file -> ignore (close_process_in ic)
-  end ;
 
-  let strip_option var =
-    match var with
-      | None -> raise Fdinfo_parse_error
-      | Some value -> value
-  in
+      done
+    with
+      | End_of_file ->
+	begin match !ic with
+	  | None -> ()
+	  | Some inchan -> ignore (close_in inchan)
+	end
+      | Sys_error _ -> raise Fdinfo_parse_error
+
+  end ;
 
   ((strip_option !pos), (strip_option !flags))
 
