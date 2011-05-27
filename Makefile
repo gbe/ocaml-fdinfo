@@ -5,7 +5,7 @@ OCAMLLIBDIR := $(shell ocamlc -where)
 OCAMLDESTDIR ?= $(OCAMLLIBDIR)
 OCAMLFIND_INSTALL_FLAGS ?= -destdir $(OCAMLDESTDIR) -ldconf ignore
 
-all: byte native
+all: byte native filesof
 
 interface:
 	ocamlc -o $(LIB).cmi -c $(LIB).mli
@@ -18,9 +18,9 @@ native:interface
 	ocamlopt $(FLAGS) -c $(LIB).ml
 	ocamlopt -a -o $(LIB).cmxa $(LIB).cmx
 
-test:
-	ocamlfind ocamlopt -linkpkg -package fdinfo -c test.ml
-	ocamlfind ocamlopt -linkpkg -package fdinfo str.cmxa fdinfo.cmxa -o test test.cmx
+filesof: filesof.ml
+	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str -c filesof.ml
+	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str filesof.cmx -o filesof
 
 install:
 	ocamlfind install $(OCAMLFIND_INSTALL_FLAGS) $(LIB) META fdinfo.cmi fdinfo.mli fdinfo.cma fdinfo.cmxa *.a *.cmx
@@ -35,4 +35,4 @@ uninstall:
 	ocamlfind remove $(OCAMLFIND_INSTALL_FLAGS) $(LIB)
 
 clean:
-	rm -f *.cm[oixa] *.cmxa *.annot *.[ao] *~ test
+	rm -f *.cm[oixa] *.cmxa *.annot *.[ao] *~ filesof

@@ -1,5 +1,5 @@
 version="0.2.1"
 description="Linux fdinfo"
-requires="unix"
+requires="unix str"
 archive(byte)="fdinfo.cma"
 archive(native)="fdinfo.cmxa"
