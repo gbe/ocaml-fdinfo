@@ -5,7 +5,7 @@ open Fdinfo;;
 let _ =
   
   (* you need to know the pid to use this library *)
-  let p = pid_of_int 6723 in
+  let p = pid_of_int (int_of_string (Sys.argv.(1))) in
   
   begin
     try
@@ -21,6 +21,6 @@ let _ =
 	prerr_endline "An error occurred while parsing data from /proc"
   end ;
 
-  Pervasives.flush Pervasives.stdout
+  flush stdout
         
 ;;
