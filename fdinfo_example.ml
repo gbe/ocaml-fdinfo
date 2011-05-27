@@ -1,11 +1,29 @@
-(* A simple test to show how it works *)
+(* A simple example to show how it works.
+ * You need to know the pid to use this library.
+ *)
+
 
 open Fdinfo;;
 
 let _ =
   
-  (* you need to know the pid to use this library *)
-  let p = pid_of_int (int_of_string (Sys.argv.(1))) in
+  let usage = "usage: fdinfo_example pid" in
+
+  if (Array.length Sys.argv) <> 2 then
+    begin
+      print_endline usage ;
+      exit 1
+    end ;
+
+  let ipid =
+    try
+      int_of_string (Sys.argv.(1))
+    with Failure "int_of_string" ->
+      print_endline usage ;
+      exit 2
+  in
+
+  let p = pid_of_int ipid in
   
   begin
     try

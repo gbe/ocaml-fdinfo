@@ -18,9 +18,9 @@ native:interface
 	ocamlopt $(FLAGS) -c $(LIB).ml
 	ocamlopt -a -o $(LIB).cmxa $(LIB).cmx
 
-example: example.ml
-	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str -c example.ml
-	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str example.cmx -o example
+fdinfo_example: fdinfo_example.ml
+	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str -c fdinfo_example.ml
+	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str fdinfo_example.cmx -o fdinfo_example
 
 install:
 	ocamlfind install $(OCAMLFIND_INSTALL_FLAGS) $(LIB) META fdinfo.cmi fdinfo.mli fdinfo.cma fdinfo.cmxa *.a *.cmx
@@ -35,4 +35,4 @@ uninstall:
 	ocamlfind remove $(OCAMLFIND_INSTALL_FLAGS) $(LIB)
 
 clean:
-	rm -f *.cm[oixa] *.cmxa *.annot *.[ao] *~ example
+	rm -f *.cm[oixa] *.cmxa *.annot *.[ao] *~ fdinfo_example
