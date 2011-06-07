@@ -18,9 +18,8 @@ native:interface
 	ocamlopt $(FLAGS) -c $(LIB).ml
 	ocamlopt -a -o $(LIB).cmxa $(LIB).cmx
 
-fdinfo_example: fdinfo_example.ml
-	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str -c fdinfo_example.ml
-	OCAMLPATH=../ ocamlfind ocamlopt -linkpkg -package fdinfo,str fdinfo_example.cmx -o fdinfo_example
+fdinfo_example: native fdinfo_example.ml
+	ocamlfind ocamlopt -linkpkg -package str,unix fdinfo.cmxa -o fdinfo_example fdinfo_example.ml
 
 install:
 	ocamlfind install $(OCAMLFIND_INSTALL_FLAGS) $(LIB) META fdinfo.cmi fdinfo.mli fdinfo.cma fdinfo.cmxa *.a *.cmx
