@@ -29,7 +29,9 @@ let _ =
     try
       let info_list = Fdinfo.get p in
       List.iter (fun info ->
-	Printf.printf "File descriptor number: %d\nName: %s\nCurrent offset: %Ld\nFlags: %Ld\n\n" info.num info.name info.offset info.flags)
+	Printf.printf "File descriptor number: %d\nName: %s\nCurrent offset: %Ld\nFlags: %Ld\n\n"
+	info.num info.name info.offset info.flags
+	)
 	info_list
     with
       | Unix.Unix_error (e,_,_) ->
