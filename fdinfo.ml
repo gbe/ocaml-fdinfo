@@ -3,11 +3,10 @@ open Unix ;;
 exception Fdinfo_parse_error ;;
 
 type fdinfo = {
-  num : int ;
-  name : string ;
   offset : int64 ;
   flags : int64 ;
 } ;;
+
 
 type pid = int ;;
 
@@ -21,7 +20,7 @@ let get_infos pid fdnum =
   let flags = ref None in
 
   let r = Str.regexp "[0-9]+" in
-  let file = Printf.sprintf "/proc/%d/fdinfo/%s" pid fdnum in
+  let file = Printf.sprintf "/proc/%d/fdinfo/%d" pid fdnum in
 
 
   let get_value delim =
@@ -65,59 +64,43 @@ let get_infos pid fdnum =
 
   end ;
 
-  ((strip_option !pos), (strip_option !flags))
+  { offset = Int64.of_string (strip_option !pos) ;
+    flags = Int64.of_string (strip_option !flags)
+  }
 
 ;;
 
 
+let get_fds pid =
 
+  let fds = ref [] in
+  let dhopt = ref None in
 
-let get pid =
-
-  let ipid = int_of_pid pid in
-
-  let file = Printf.sprintf "/proc/%d/fd" ipid in
-  
-  Unix.access file [R_OK ; X_OK ; F_OK] ;
-  
-  let cmd = Printf.sprintf "ls -goQ %s | grep -v total" file in
-  let ic = Unix.open_process_in cmd in
-  let r = Str.regexp "\"[^\"]+\"" in
-  
-  let fd_l = ref [] in
-  
-  let clean_delim s =
-    String.sub s 1 ((String.length s) - 2)
-  in
-  
   begin
     try
+      let path = "/proc/"^(string_of_int (int_of_pid pid))^"/fd" in
+      let dh = opendir path in
+      dhopt := Some dh ;
+
       while true do
-	let line = input_line ic in
+	let fdnum = readdir dh in
+	let fullpath = path^"/"^fdnum in				
+	let stats = Unix.stat fullpath in
 	
-	ignore (Str.search_forward r line 0);
-	
-	let fd_num_dirty = Str.matched_string line in
-	let fd_num = clean_delim fd_num_dirty in
-	
-	ignore (Str.search_backward r line (String.length line));
-	let fd_name_dirty = Str.matched_string line in
-	let fd_name = clean_delim fd_name_dirty in
-
-	let (offset, flags) = get_infos ipid fd_num in
-	
-	fd_l := {
-	  num = (int_of_string fd_num) ;
-	  name = fd_name ;
-	  offset = Int64.of_string offset ;
-	  flags = Int64.of_string flags
-	} :: (!fd_l)
+	match stats.st_kind with
+	  | S_LNK -> ()
+ 	  | S_DIR -> ()
+	  | S_REG ->
+	    fds := (int_of_string fdnum, Unix.readlink fullpath)::(!fds)
+	  | S_CHR -> ()
+	  | S_BLK -> ()
+	  | S_FIFO -> ()
+	  | S_SOCK -> ()
       done;
-      
-    with End_of_file -> ignore (close_process_in ic)
+    with End_of_file ->
+      match !dhopt with
+	| None -> ()
+	| Some dh -> closedir dh
   end;
-  
-  !fd_l
-
+  !fds
 ;;
-
