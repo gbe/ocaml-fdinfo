@@ -16,6 +16,6 @@ type pid
     
 val pid_of_int : int -> pid
 
-(** [get pid] returns file descriptors informations [fdinfo list] opened by [pid]. In case of errors, it can raise both the Unix module's exceptions and [Fdinfo_parse_error] *)
+(** [get_fds pid] returns a list of file descriptors [int] and fullpath [string] of files opened by [pid]. In case of errors, it can raise both the Unix module's exceptions and [Fdinfo_parse_error] *)
 val get_fds : pid -> (int * string) list
 val get_infos : int -> int -> fdinfo
