@@ -4,14 +4,19 @@ exception Fdinfo_parse_error ;;
 
 type fdinfo = {
   offset : int64 ;
-  flags : int64 ;
+  flags : string ;
 } ;;
 
 
 type pid = int ;;
+type fd = int ;;
 
 let pid_of_int i = i ;;
 let int_of_pid i = i ;;
+
+let fd_of_int f = f ;;
+let int_of_fd f = f ;;
+let fd_of_string f = int_of_string f ;;
 
 
 let get_infos pid fdnum =
@@ -20,7 +25,10 @@ let get_infos pid fdnum =
   let flags = ref None in
 
   let r = Str.regexp "[0-9]+" in
-  let file = Printf.sprintf "/proc/%d/fdinfo/%d" pid fdnum in
+  let file =
+    Printf.sprintf "/proc/%d/fdinfo/%d"
+      (int_of_pid pid) (int_of_fd fdnum)
+  in
 
 
   let get_value delim =
@@ -47,8 +55,12 @@ let get_infos pid fdnum =
 	match Str.full_split r line with
 	  | text::[delim] ->
 	    begin match text with
-	      | Str.Text "pos:\t" -> pos := Some (get_value delim)
-	      | Str.Text "flags:\t" -> flags := Some (get_value delim)
+	      | Str.Text "pos:\t" ->
+		pos := Some (get_value delim)
+
+	      | Str.Text "flags:\t" ->
+		flags := Some (get_value delim)
+
 	      | _ -> raise Fdinfo_parse_error
 	    end
 	  | _ -> raise Fdinfo_parse_error
@@ -64,8 +76,9 @@ let get_infos pid fdnum =
 
   end ;
 
-  { offset = Int64.of_string (strip_option !pos) ;
-    flags = Int64.of_string (strip_option !flags)
+  {
+    offset = Int64.of_string (strip_option !pos) ;
+    flags = strip_option !flags
   }
 
 ;;
@@ -78,7 +91,7 @@ let get_fds pid =
 
   begin
     try
-      let path = "/proc/"^(string_of_int (int_of_pid pid))^"/fd" in
+      let path = Printf.sprintf "/proc/%d/fd" (int_of_pid pid) in
       let dh = opendir path in
       dhopt := Some dh ;
 
@@ -91,7 +104,7 @@ let get_fds pid =
 	  | S_LNK -> ()
  	  | S_DIR -> ()
 	  | S_REG ->
-	    fds := (int_of_string fdnum, Unix.readlink fullpath)::(!fds)
+	    fds := (fd_of_string fdnum, Unix.readlink fullpath)::(!fds)
 	  | S_CHR -> ()
 	  | S_BLK -> ()
 	  | S_FIFO -> ()

@@ -31,12 +31,12 @@ let _ =
       Printf.printf "Length: %d\n" (List.length info_list);
       Pervasives.flush Pervasives.stdout;
       
-      List.iter (fun (fd, fullpath) ->
-	let infos = Fdinfo.get_infos ipid fd in
-	Printf.printf "File descriptor number: %d\n" fd;
-	Printf.printf "Name: %s\n" fullpath;
-	Printf.printf "Current offset: %s\n" (Int64.to_string infos.offset);
-	Printf.printf "Flags: %s\n\n"  (Int64.to_string infos.flags) ;
+      List.iter (fun (fd', fullpath) ->
+	let infos = Fdinfo.get_infos p fd' in
+	Printf.printf "File descriptor number: %d\n" (int_of_fd fd') ;
+	Printf.printf "Name: %s\n" fullpath ;
+	Printf.printf "Current offset: %s\n" (Int64.to_string infos.offset) ;
+	Printf.printf "Flags: %s\n\n"  infos.flags ;
       )
 	info_list
     with
