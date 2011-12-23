@@ -19,6 +19,74 @@ let int_of_fd f = f ;;
 let fd_of_string f = int_of_string f ;;
 
 
+let get_pids () =
+
+  let proc = "/proc/" in
+
+  let pids = ref [] in
+  let r = Str.regexp "^[0-9]+$" in
+  
+  let dh = Unix.opendir proc in
+  begin
+    try
+      while true do
+	let entry = Unix.readdir dh in
+	
+	match Sys.is_directory (proc^entry) with
+	  | false -> ()
+	  | true ->
+	    begin match entry with
+	      | ("." | "..") -> ()
+	      | _ ->
+		if Str.string_match r entry 0 then
+		  pids := pid_of_int (int_of_string entry) :: (!pids)
+		else
+		  ()
+	    end
+      done
+    with End_of_file -> Unix.closedir dh
+  end ;
+
+  !pids
+;;
+
+
+let get_fds pid =
+
+  let fds = ref [] in
+  let dhopt = ref None in
+
+  begin
+    try
+      let path = Printf.sprintf "/proc/%d/fd" (int_of_pid pid) in
+      let dh = opendir path in
+      dhopt := Some dh ;
+
+      while true do
+	let fdnum = readdir dh in
+	let fullpath = path^"/"^fdnum in				
+	let stats = Unix.stat fullpath in
+	
+	match stats.st_kind with
+	  | S_LNK -> ()
+ 	  | S_DIR -> ()
+	  | S_REG ->
+	    fds := (fd_of_string fdnum, Unix.readlink fullpath)::(!fds)
+	  | S_CHR -> ()
+	  | S_BLK -> ()
+	  | S_FIFO -> ()
+	  | S_SOCK -> ()
+      done;
+    with End_of_file ->
+      match !dhopt with
+	| None -> ()
+	| Some dh -> closedir dh
+  end;
+  !fds
+;;
+
+
+
 let get_infos pid fdnum =
   
   let pos = ref None in
@@ -80,40 +148,4 @@ let get_infos pid fdnum =
     offset = Int64.of_string (strip_option !pos) ;
     flags = strip_option !flags
   }
-
-;;
-
-
-let get_fds pid =
-
-  let fds = ref [] in
-  let dhopt = ref None in
-
-  begin
-    try
-      let path = Printf.sprintf "/proc/%d/fd" (int_of_pid pid) in
-      let dh = opendir path in
-      dhopt := Some dh ;
-
-      while true do
-	let fdnum = readdir dh in
-	let fullpath = path^"/"^fdnum in				
-	let stats = Unix.stat fullpath in
-	
-	match stats.st_kind with
-	  | S_LNK -> ()
- 	  | S_DIR -> ()
-	  | S_REG ->
-	    fds := (fd_of_string fdnum, Unix.readlink fullpath)::(!fds)
-	  | S_CHR -> ()
-	  | S_BLK -> ()
-	  | S_FIFO -> ()
-	  | S_SOCK -> ()
-      done;
-    with End_of_file ->
-      match !dhopt with
-	| None -> ()
-	| Some dh -> closedir dh
-  end;
-  !fds
 ;;

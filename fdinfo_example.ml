@@ -1,6 +1,4 @@
-(* A simple example to show how it works.
- * You need to know the pid to use this library.
- *)
+(* A simple example to show how it works. *)
 
 
 open Fdinfo;;
