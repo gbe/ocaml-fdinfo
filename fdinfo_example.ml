@@ -27,7 +27,6 @@ let _ =
     try
       let info_list = Fdinfo.get_fds p in
       Printf.printf "Length: %d\n" (List.length info_list);
-      Pervasives.flush Pervasives.stdout;
       
       List.iter (fun (fd', fullpath) ->
 	let infos = Fdinfo.get_infos p fd' in
