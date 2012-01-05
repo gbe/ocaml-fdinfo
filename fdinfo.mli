@@ -27,4 +27,5 @@ val get_pids : unit -> pid list
 (** [get_fds pid] returns a list of file descriptors [fd] and fullpath [string] of files opened by [pid]. In case of errors, it can raise both the Unix module's exceptions and [Fdinfo_parse_error] *)
 val get_fds : pid -> (fd * string) list
 
+(** [get_infos pid fd] returns informations [fdinfo] extracted from /proc on the file [fd] opened by the processus [pid] *)
 val get_infos : pid -> fd -> fdinfo
