@@ -32,9 +32,11 @@ let get_pids () =
       while true do
 	let entry = Unix.readdir dh in
 	
-	match Sys.is_directory (proc^entry) with
-	  | false -> ()
-	  | true ->
+	(* This try/with is to prevent race conditions, but silently fails *)
+	try
+	  match Sys.is_directory (proc^entry) with
+	    | false -> ()
+	    | true ->
 	    begin match entry with
 	      | ("." | "..") -> ()
 	      | _ ->
@@ -43,6 +45,7 @@ let get_pids () =
 		else
 		  ()
 	    end
+	with Sys_error _ -> ()
       done
     with End_of_file -> Unix.closedir dh
   end ;
