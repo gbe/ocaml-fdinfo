@@ -1,6 +1,7 @@
 open Unix ;;
 
 exception Fdinfo_parse_error ;;
+exception Fdinfo_unix_error of (Unix.error * string) ;;
 
 type fdinfo = {
   offset : int64 ;
@@ -19,16 +20,26 @@ let int_of_fd f = f ;;
 let fd_of_string f = int_of_string f ;;
 
 
+let close_dh dhopt =
+  match dhopt with
+    | None -> ()
+    | Some dh -> closedir dh
+;;
+
+
 let get_pids () =
-
+  
+  let dhopt = ref None in
   let proc = "/proc/" in
-
+  
   let pids = ref [] in
   let r = Str.regexp "^[0-9]+$" in
   
-  let dh = Unix.opendir proc in
   begin
     try
+      let dh = Unix.opendir proc in
+      dhopt := Some dh ;
+      
       while true do
 	let entry = Unix.readdir dh in
 	
@@ -37,17 +48,26 @@ let get_pids () =
 	  match Sys.is_directory (proc^entry) with
 	    | false -> ()
 	    | true ->
-	    begin match entry with
-	      | ("." | "..") -> ()
-	      | _ ->
-		if Str.string_match r entry 0 then
-		  pids := pid_of_int (int_of_string entry) :: (!pids)
-		else
-		  ()
-	    end
+	      begin match entry with
+		| ("." | "..") -> ()
+		| _ ->
+		  if Str.string_match r entry 0 then
+		    pids := pid_of_int (int_of_string entry) :: (!pids)
+		  else
+		    ()
+	      end
 	with Sys_error _ -> ()
       done
-    with End_of_file -> Unix.closedir dh
+    with
+      | Unix_error (err, "opendir", _) ->
+	close_dh !dhopt;
+	raise (Fdinfo_unix_error (err, "opendir"))
+	  
+      | Unix_error (err, "readdir", _) ->
+	close_dh !dhopt;
+	raise (Fdinfo_unix_error (err, "readdir"))
+	  
+      | End_of_file -> close_dh !dhopt
   end ;
 
   !pids
@@ -60,30 +80,45 @@ let get_fds pid =
   let dhopt = ref None in
 
   begin
-    try
       let path = Printf.sprintf "/proc/%d/fd" (int_of_pid pid) in
-      let dh = opendir path in
-      dhopt := Some dh ;
-
-      while true do
-	let fdnum = readdir dh in
-	let fullpath = path^"/"^fdnum in				
-	let stats = Unix.stat fullpath in
+      try
+	let dh = opendir path in
+	dhopt := Some dh ;
 	
-	match stats.st_kind with
-	  | S_LNK -> ()
- 	  | S_DIR -> ()
-	  | S_REG ->
-	    fds := (fd_of_string fdnum, Unix.readlink fullpath)::(!fds)
-	  | S_CHR -> ()
-	  | S_BLK -> ()
-	  | S_FIFO -> ()
-	  | S_SOCK -> ()
-      done;
-    with End_of_file ->
-      match !dhopt with
-	| None -> ()
-	| Some dh -> closedir dh
+	while true do
+	  let fdnum = readdir dh in
+	  let fullpath = path^"/"^fdnum in				
+	  let stats = Unix.stat fullpath in
+	
+	  match stats.st_kind with
+	    | S_LNK -> ()
+ 	    | S_DIR -> ()
+	    | S_REG ->
+	      fds := (fd_of_string fdnum, Unix.readlink fullpath)::(!fds)
+	    | S_CHR -> ()
+	    | S_BLK -> ()
+	    | S_FIFO -> ()
+	    | S_SOCK -> ()
+	done;
+      with 
+	| Unix_error (err, "opendir", _) ->
+	  close_dh !dhopt;
+	  raise (Fdinfo_unix_error (err, "opendir"))
+
+	| Unix_error (err, "readdir", _) ->
+	  close_dh !dhopt;
+	  raise (Fdinfo_unix_error (err, "readdir"))
+
+	| Unix_error (err, "readlink", _) ->
+	  close_dh !dhopt;
+	  raise (Fdinfo_unix_error (err, "readlink"))
+
+	| Unix_error (err, "stat", _) ->
+	  close_dh !dhopt;
+	  raise (Fdinfo_unix_error (err, "stat"))
+
+	| End_of_file ->
+	  close_dh !dhopt;
   end;
   !fds
 ;;

@@ -37,8 +37,8 @@ let _ =
       )
 	info_list
     with
-      | Unix.Unix_error (e,_,_) ->
-	prerr_endline (Unix.error_message e) ;
+      | Fdinfo_unix_error (error, funct) ->
+	prerr_endline ((Unix.error_message error)^" in funct: "^funct) ;
 	
       | Fdinfo_parse_error ->
 	prerr_endline "An error occurred while parsing data from /proc"
