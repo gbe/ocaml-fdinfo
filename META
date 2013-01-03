@@ -1,4 +1,4 @@
-version="0.3.2"
+version="0.4"
 description="Linux fdinfo"
 requires="unix str"
 archive(byte)="fdinfo.cma"
