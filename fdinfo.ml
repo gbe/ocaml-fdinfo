@@ -60,16 +60,20 @@ let get_pids () =
 		  else
 		    ()
 	      end
-	with Sys_error _ -> ()
+	with
+	  | Sys_error _ -> ()
+
+	    (* must be here in case an entry could not be read,
+	     * then we do not loose all the pids.
+	     *  Should not happen as a user should be able to read /proc *)
+	  | Unix_error (err, "readdir", _) ->
+	    close_dh dhopt
+
       done
     with
       | Unix_error (err, "opendir", _) ->
 	close_dh dhopt;
 	raise (Fdinfo_unix_error (err, "opendir", Ppid []))
-	  
-      | Unix_error (err, "readdir", _) ->
-	close_dh dhopt;
-	raise (Fdinfo_unix_error (err, "readdir", Ppid !pids))
 	  
       | End_of_file -> close_dh dhopt
   end ;
@@ -133,7 +137,11 @@ let get_fds pid =
   !fds
 ;;
 
-
+let close_inchan ic =
+  match !ic with
+    | None -> ()
+    | Some ic' -> ignore (close_in ic') ; ic := None
+;;
 
 let get_infos pid fdnum =
   
@@ -177,18 +185,18 @@ let get_infos pid fdnum =
 	      | Str.Text "flags:\t" ->
 		flags := Some (get_value delim)
 
-	      | _ -> raise Fdinfo_parse_error
+	      | _ -> close_inchan ic ; raise Fdinfo_parse_error
 	    end
-	  | _ -> raise Fdinfo_parse_error
+	  | _ -> close_inchan ic ; raise Fdinfo_parse_error
 
       done
     with
       | End_of_file ->
-	begin match !ic with
-	  | None -> ()
-	  | Some inchan -> ignore (close_in inchan)
-	end
-      | Sys_error err -> raise (Fdinfo_sys_error err)
+	close_inchan ic
+
+      | Sys_error err ->
+	close_inchan ic ;
+	raise (Fdinfo_sys_error err)
 
   end ;
 

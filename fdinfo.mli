@@ -29,6 +29,8 @@ val fd_of_int : int -> fd
 val int_of_fd : fd -> int
 val fd_of_string : string -> fd
 
+
+(** [get_pids ()] returns a list of processus. In case of errors, it raises [Fdinfo_unix_error] *)
 val get_pids : unit -> pid list
 
 (** [get_fds pid] returns a list of file descriptors [fd] and fullpath [string] of files opened by [pid]. In case of errors, it raises [Fdinfo_unix_error] *)
